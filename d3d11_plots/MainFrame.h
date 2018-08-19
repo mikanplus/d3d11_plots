@@ -13,6 +13,8 @@
 #include "ascii_string.h"
 #include "stencil_helper.h"
 #include "d3d11_plots.h"
+#include "MyListView.h"
+#include "PlotView.h"
 
 //------------------------------------------------------------------------
 //	外装メインフレーム
@@ -26,21 +28,23 @@ public:
 	virtual ~CMainFrame() {}
 
     // ウィンドウクラス名、共通リソースID、スタイル、背景色を登録
-	DECLARE_FRAME_WND_CLASS_EX(_T("ConstellationView"), IDR_MAINFRAME,
+	DECLARE_FRAME_WND_CLASS_EX(_T("d3d11_plots"), IDR_MAINFRAME,
 		CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS, COLOR_WINDOW);
 
 	// メッセージマップ
     BEGIN_MSG_MAP(CMainFrame)
 		MSG_WM_TIMER(OnTimer)
-		MSG_WM_SIZE(OnSize)
+		MESSAGE_HANDLER_EX(WM_USER_RESIZEPLOT, OnResizePlot)
 		MSG_WM_CREATE(OnCreate)
         MSG_WM_DESTROY(OnDestroy)
 		CHAIN_MSG_MAP(CFrameWindowImpl<CMainFrame>)
+		REFLECT_NOTIFICATIONS_HWND_FILTERED(mPropList)
     END_MSG_MAP()
 
 	// 各種イベントハンドラ
 	BOOL PreTranslateMessage(MSG *pMsg);
 	void OnTimer(UINT_PTR nIDEvent);
+	LRESULT OnResizePlot(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void OnSize(UINT nType, CSize size);
 	int OnCreate(LPCREATESTRUCT lpCreateStruct);
 	void OnDestroy();
@@ -67,6 +71,11 @@ private:
 		float	dummy2;
 	};
 	typedef std::complex<float> c_type;
+
+	// 各種コントロール
+	CSplitterWindow		mVSplitter;
+	CPlotView			mPlotArea;
+	CPropListView		mPropList;
 
 	// その他メンバ
 	tstring				mExePath;		// EXEパス

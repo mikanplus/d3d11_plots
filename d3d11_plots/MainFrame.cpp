@@ -48,62 +48,71 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 	if ( CFrameWindowImpl<CMainFrame>::PreTranslateMessage(pMsg) )
 		return TRUE;
 
-	return FALSE;
+	return mPlotArea.PreTranslateMessage(pMsg);
 }
 
 // タイマーイベント
 void CMainFrame::OnTimer(UINT_PTR nIDEvent)
 {
 	float color[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-	// 表示データ作成
 	float y(0.0f);
 	std::vector<c_type> buf(50000);
 	std::normal_distribution<float> dist(0.0f, 0.1f);
-//	std::exponential_distribution<float> dist(0.1f);
-//	std::uniform_real_distribution<float> dist(-0.2, 0.2);
 	
-	HRESULT hr;
 	CRect rect;
-	GetClientRect(rect);
+	mPlotArea.GetClientRect(rect);
 
 	ID3D11DeviceContext* context = mD3d11Dev;
 	IDXGISwapChain* swap_chain = mD3d11Dev;
-	CD3D11_VIEWPORT vp(0.0f, 0.0f, rect.Width(), rect.Height());
-	
-	const_buffer_t cbuf = { rect.Width(), rect.Height() };
-	context->UpdateSubresource(
-		mConstBuffer, 0, NULL, &cbuf, sizeof(const_buffer_t), 0);
 
+	// 表示データの更新
+	for ( int i=0; i<buf.size(); i++ )
+		buf[i] = c_type(dist(m_seed), dist(m_seed));
+	mPlots[0]->UpdateData(context, &buf[0], buf.size());
+	mPlots[1]->UpdateData(context, (float*)NULL, &buf[0], buf.size());
+
+	// レンダリング
+	CD3D11_VIEWPORT vp(0.0f, 0.0f, rect.Width(), rect.Height());
 	context->ClearRenderTargetView(mRenderTarget, color);
 	context->ClearDepthStencilView(
 		mDepthView, D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 0.0f, 0x00);
 	context->VSSetConstantBuffers(0, 1, mConstBuffer);
 	context->RSSetViewports(1, &vp);
-
-	for ( int i=0; i<buf.size(); i++ )
-		buf[i] = c_type(dist(m_seed), dist(m_seed));
-	mPlots[0]->UpdateData(context, &buf[0], buf.size());
-
-	mPlots[1]->UpdateData(
-		context, (float*)NULL, &buf[0], buf.size());
-
 	mPlots.Render(context);
 
+	// 実行
 	swap_chain->Present(0, 0);
 }
 
 // サイズ変更イベント
-void CMainFrame::OnSize(UINT nType, CSize size)
+LRESULT CMainFrame::OnResizePlot(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	if ( nType!=SIZE_RESTORED && nType!=SIZE_MINIMIZED ) return;
-	if ( NULL==(ID3D11Device*)mD3d11Dev ) return;
+	SetMsgHandled(FALSE);
 
+	if ( wParam!=SIZE_RESTORED && wParam!=SIZE_MINIMIZED ) return 0;
+	if ( NULL==(ID3D11Device*)mD3d11Dev ) return 0;
+
+	CRect rect;
+	mPlotArea.GetClientRect(&rect);
+	float w(rect.Width()), h(rect.Height());
+
+	// バッファのリサイズ
 	mRenderTarget.Release();
-	mD3d11Dev.Resize(*this);
-	mDepthView.Create(mD3d11Dev, mD3d11Dev.Width(), mD3d11Dev.Height());
+	mD3d11Dev.Resize(mPlotArea);
+	mDepthView.Create(mD3d11Dev, w, h);
 	mRenderTarget.Create(mD3d11Dev);
 	mRenderTarget.Select(1, mD3d11Dev, mDepthView);
+
+	// 定数バッファの更新
+	ID3D11DeviceContext *context = mD3d11Dev;
+	const_buffer_t cbuf = { w, h };
+	context->UpdateSubresource(
+		mConstBuffer, 0, NULL, &cbuf, sizeof(const_buffer_t), 0);
+
+	// グラフエリアのリサイズ
+	mPlots.SetArea(0.1f*w, 0.1f*h, 0.8f*w, 0.8f*h);
+
+	return 0;
 }
 
 // ウインドウ生成
@@ -113,6 +122,26 @@ int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	HICON hIcon = AtlLoadIconImage(IDR_MAINFRAME, LR_DEFAULTCOLOR,
 		::GetSystemMetrics(SM_CXICON), ::GetSystemMetrics(SM_CYICON));
 	SetIcon(hIcon, TRUE);
+
+	// スプリットウインドウの作成
+	mVSplitter.Create(m_hWnd, rcDefault, NULL,
+		WS_CHILD| WS_VISIBLE| WS_CLIPCHILDREN| WS_CLIPSIBLINGS);
+	mVSplitter.SetSplitterExtendedStyle(SPLIT_RIGHTALIGNED);
+
+	// ビューを作成
+	mPlotArea.Create(mVSplitter, rcDefault, NULL,
+		WS_CHILD |WS_VISIBLE |WS_CLIPCHILDREN |WS_CLIPSIBLINGS, WS_EX_CLIENTEDGE);
+	mPropList.Create(mVSplitter, rcDefault, NULL,
+		WS_CHILD |WS_VISIBLE |WS_CLIPCHILDREN |WS_CLIPSIBLINGS |WS_BORDER |LVS_OWNERDATA |LVS_REPORT |LVS_SINGLESEL);
+
+	// ペインの設定
+	m_hWndClient = mVSplitter;
+	mVSplitter.SetSplitterPane(SPLIT_PANE_LEFT, mPlotArea);
+	mVSplitter.SetSplitterPane(SPLIT_PANE_RIGHT, mPropList);
+
+	// レイアウト更新
+	UpdateLayout();
+	mVSplitter.SetSplitterPos(420);
 
 	// メッセージフィルタ追加
 	CMessageLoop* pLoop = _Module.GetMessageLoop();
@@ -173,6 +202,11 @@ void CMainFrame::LoadConfig()
 	place.rcNormalPosition.bottom = top + height;
 	place.showCmd = SW_SHOWNORMAL;
 	SetWindowPlacement(&place);
+
+	// スプリットウインドウの設定読み込み
+	value = pt.get_optional<int>("MainFrame.VSplitPos");
+	left = ( value ) ? *value : 500;
+	mVSplitter.SetSplitterPos(left);
 }
 
 // 設定の保存
@@ -182,7 +216,6 @@ void CMainFrame::SaveConfig()
 	WINDOWPLACEMENT place = { sizeof(WINDOWPLACEMENT) };
 	GetWindowPlacement(&place);
 	CRect rect(place.rcNormalPosition);
-
 	boost::property_tree::ptree pt;
 
 	// ウインドウサイズの書き出し
@@ -190,6 +223,21 @@ void CMainFrame::SaveConfig()
 	pt.put("MainFrame.Height",	rect.Height());
 	pt.put("MainFrame.Top",		rect.top);
 	pt.put("MainFrame.Left",	rect.left);
+
+	// 最小化されている場合は、そのままスプリッタの位置を取得
+	if ( place.showCmd==SW_SHOWMINIMIZED ) {
+		vpos = mVSplitter.GetSplitterPos();
+	}
+
+	// そのほかの場合は、固定されているペイン幅と高さを保持するようSplitPosを計算
+	else {
+		CRect wnd_rect(0, 0, 0, 0);
+		GetWindowRect(&wnd_rect);
+		vpos = rect.Width() - (wnd_rect.Width() - mVSplitter.GetSplitterPos());
+	}
+
+	// スプリットウインドウの設定書き出し
+	pt.put("MainFrame.VSplitPos", vpos);
 
 	// 設定ファイル書き出し
 	boost::property_tree::write_ini((const char*)CT2CA(mIniName.c_str()), pt);
@@ -199,7 +247,7 @@ void CMainFrame::SaveConfig()
 void CMainFrame::InitD3d()
 {
 	// DirectXの初期化
-	HRESULT hr = mD3d11Dev.Create(*this);
+	HRESULT hr = mD3d11Dev.Create(mPlotArea);
 	if ( FAILED(hr) ) return;
 
 	// 深度バッファの生成
@@ -210,7 +258,11 @@ void CMainFrame::InitD3d()
 	mRenderTarget.Select(1, mD3d11Dev, mDepthView);
 
 	// 定数バッファの生成
-	mConstBuffer.Create(mD3d11Dev, sizeof(const_buffer_t), 0, 0);
+	CRect rect;
+	mPlotArea.GetClientRect(&rect);
+	const_buffer_t cbuf = { rect.Width(), rect.Height() };
+	mConstBuffer.Create(
+		mD3d11Dev, sizeof(const_buffer_t), 0, 0, &cbuf, sizeof(cbuf));
 
 	// グリッドの作成
 	rect_trace_ptr trace;

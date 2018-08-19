@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Controls">
+      <UniqueIdentifier>{0875198f-9da5-499a-a7c3-12e52aac8be7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ascii_string.h">
@@ -24,9 +27,6 @@
     <ClInclude Include="d3d11_plots.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="MainFrame.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -34,6 +34,27 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="MainFrame.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include="ParamInterface.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="ListItem.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include="ListViewPlus.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include="MyListView.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include="MelonUnits.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="PlotView.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -50,10 +71,28 @@
     <ClCompile Include="d3d11_plots.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="MainFrame.cpp">
+    <ClCompile Include="stencil_helper.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="stencil_helper.cpp">
+    <ClCompile Include="MainFrame.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include="ParamInterface.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="ListItem.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include="ListViewPlus.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include="MyListView.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include="MelonUnits.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="PlotView.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>

@@ -78,7 +78,13 @@
     <ClInclude Include="ascii_string.h" />
     <ClInclude Include="d3d11_helper.h" />
     <ClInclude Include="d3d11_plots.h" />
+    <ClInclude Include="ListItem.h" />
+    <ClInclude Include="ListViewPlus.h" />
     <ClInclude Include="MainFrame.h" />
+    <ClInclude Include="MelonUnits.h" />
+    <ClInclude Include="MyListView.h" />
+    <ClInclude Include="ParamInterface.h" />
+    <ClInclude Include="PlotView.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="stencil_helper.h" />
@@ -88,7 +94,13 @@
     <ClCompile Include="d3d11_helper.cpp" />
     <ClCompile Include="d3d11_main.cpp" />
     <ClCompile Include="d3d11_plots.cpp" />
+    <ClCompile Include="ListItem.cpp" />
+    <ClCompile Include="ListViewPlus.cpp" />
     <ClCompile Include="MainFrame.cpp" />
+    <ClCompile Include="MelonUnits.cpp" />
+    <ClCompile Include="MyListView.cpp" />
+    <ClCompile Include="ParamInterface.cpp" />
+    <ClCompile Include="PlotView.cpp" />
     <ClCompile Include="stencil_helper.cpp" />
   </ItemGroup>
   <ItemGroup>
